@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análise Restrita - Protocolo 99.8%</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #0d0d0d;
+      --surface2: #111111;
+      --border: #1a1a1a;
+      --border-accent: rgba(230, 57, 70, 0.25);
+      --text: #c8c8c8;
+      --muted: #5e5e5e;
+      --accent: #e63946;
+      --accent-dim: rgba(230,57,70,0.12);
+      --accent-glow: rgba(230,57,70,0.05);
+      --mono: 'Share Tech Mono', monospace;
+      --serif: 'Cormorant Garamond', serif;
+      --cursive: 'Dancing Script', cursive;
+    }
+
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      min-height: 100vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Scanlines over the terminal */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* Animated grain effect */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: -50%;
+      width: 200%; 
+      height: 200%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      opacity: 0.55;
+      pointer-events: none;
+      z-index: 999;
+      animation: grain 0.7s steps(1) infinite;
+    }
+
+    @keyframes grain {
+      0%, 100% { transform: translate(0,0); }
+      10% { transform: translate(-1%, -2%); }
+      20% { transform: translate(2%, 1%); }
+      30% { transform: translate(-2%, 3%); }
+      40% { transform: translate(1%, -1%); }
+      50% { transform: translate(-1%, 2%); }
+      60% { transform: translate(2%, -3%); }
+      70% { transform: translate(-2%, 1%); }
+      80% { transform: translate(1%, -2%); }
+      90% { transform: translate(-1%, 1%); }
+    }
+
+    /* Fullscreen Screen Setup */
+    .screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease-in-out;
+      z-index: 10;
+    }
+
+    .screen.active {
+      opacity: 1;
+      pointer-events: all;
+      position: relative;
+    }
+
+    /* Elegant Cyber Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 48px;
+      max-width: 620px;
+      width: 100%;
+      position: relative;
+      transition: border-color 0.3s;
+    }
+
+    .card::before {
+      content: attr(data-label);
+      position: absolute;
+      top: -10px;
+      left: 24px;
+      background: var(--bg);
+      padding: 0 10px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.25em;
+    }
+
+    /* Red corner indicators */
+    .card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 40px;
+      height: 40px;
+      border-top: 1px solid var(--accent);
+      border-right: 1px solid var(--accent);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    /* Progress and Header details */
+    .phase-tag {
+      font-size: 9px;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .phase-tag::before {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .progress-bar {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 36px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+    }
+
+    /* Typography styling */
+    h1 {
+      font-family: var(--serif);
+      font-size: 32px;
+      font-weight: 300;
+      line-height: 1.2;
+      color: #f2f2f2;
+      margin-bottom: 16px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .sub {
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.8;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    /* Custom Forms and Controls */
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: #f2f2f2;
+      font-family: var(--serif);
+      font-size: 15px;
+      font-style: italic;
+      padding: 16px 20px;
+      resize: none;
+      height: 104px;
+      outline: none;
+      letter-spacing: 0.02em;
+      line-height: 1.6;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    textarea::placeholder {
+      color: rgba(200, 200, 200, 0.15);
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(230, 57, 70, 0.05);
+    }
+
+    .char-count {
+      font-size: 9px;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 6px;
+      margin-bottom: 24px;
+      letter-spacing: 0.1em;
+    }
+
+    /* Elegant Square Cyber Buttons */
+    .btn {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.25em;
+      padding: 14px 32px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.25s;
+      outline: none;
+    }
+
+    .btn:hover {
+      background: var(--accent-dim);
+      box-shadow: 0 0 12px rgba(230, 57, 70, 0.15);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn[disabled] {
+      border-color: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+
+    .btn.ghost {
+      border-color: var(--border);
+      color: var(--muted);
+    }
+
+    .btn.ghost:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn.filled {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn.filled:hover {
+      background: #c1121f;
+      box-shadow: 0 0 15px rgba(230, 57, 70, 0.25);
+    }
+
+    /* Quiz grids */
+    .quiz-section-title {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.3em;
+      margin-top: 36px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .scale-row {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .scale-question {
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 300;
+      color: #e0e0e0;
+    }
+
+    .scale-options {
+      display: flex;
+      gap: 6px;
+    }
+
+    .scale-btn {
+      flex: 1;
+      height: 38px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .scale-btn:hover {
+      border-color: rgba(230, 57, 70, 0.4);
+    }
+
+    .scale-btn.selected {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* Dropdowns & Selections */
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .option-btn {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 12px 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: normal;
+    }
+
+    .option-btn:hover {
+      border-color: rgba(230, 57, 70, 0.4);
+    }
+
+    .option-btn.selected {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Scale 0 to 10 row layout */
+    .scale-opt-10 {
+      display: grid;
+      grid-template-columns: repeat(11, 1fr);
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .btn-small-10 {
+      height: 32px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 9px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-small-10:hover {
+      border-color: rgba(230, 57, 70, 0.4);
+    }
+
+    .btn-small-10.selected {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Screen Decrypt logger console */
+    .terminal-console {
+      background: #000000;
+      border: 1px solid var(--border);
+      padding: 20px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      line-height: 1.6;
+      min-height: 120px;
+      margin-top: 24px;
+      display: none;
+      position: relative;
+    }
+
+    .terminal-console::before {
+      content: 'SYSTEM_DECRYPT_STREAM';
+      position: absolute;
+      top: -8px;
+      right: 12px;
+      background: #000;
+      color: var(--muted);
+      font-size: 8px;
+      padding: 0 4px;
+    }
+
+    /* Screen Login Key prompt style */
+    .key-prompt-wrapper {
+      display: flex;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      padding: 12px 18px;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 24px;
+    }
+
+    .prompt-cursor {
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: bold;
+      margin-right: 12px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      from, to { opacity: 0; }
+      50% { opacity: 1; }
+    }
+
+    .prompt-input {
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      color: #ffffff;
+      font-family: var(--mono);
+      font-size: 14px;
+      letter-spacing: 0.15em;
+      flex: 1;
+      text-transform: uppercase;
+    }
+
+    /* Simulated Live Console in loading */
+    .live-hacker-logs {
+      background: #000000;
+      border: 1px solid var(--border);
+      padding: 24px;
+      height: 220px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #4df33b; /* Pure terminal green for diagnostics logs */
+      line-height: 1.8;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 28px;
+    }
+
+    .live-hacker-logs p {
+      margin-bottom: 4px;
+    }
+
+    /* Screen Analysis check layout */
+    .check-block {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 20px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .check-item {
+      color: var(--accent);
+    }
+
+    .compat-block {
+      background: rgba(230, 57, 70, 0.04);
+      border-left: 2px solid var(--accent);
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+
+    .compat-block h3 {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .compat-block p {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* Candidate layout - Ricardo profile styling */
+    .candidate-grid {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+
+    .candidate-avatar {
+      width: 140px;
+      height: 140px;
+      border: 1px solid var(--border);
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .candidate-avatar:hover img {
+      transform: scale(1.08);
+    }
+
+    .avatar-icon-ascii {
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.2;
+      color: var(--accent);
+      text-align: center;
+      white-space: pre;
+    }
+
+    .candidate-metadata {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+
+    .meta-line {
+      display: flex;
+      border-bottom: 1px solid rgba(255,255,255,0.01);
+      padding-bottom: 4px;
+    }
+
+    .meta-key {
+      color: var(--muted);
+      min-width: 130px;
+    }
+
+    .meta-val {
+      color: #ffffff;
+    }
+
+    .stat-bars-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .stat-label-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+    }
+
+    .stat-meter-container {
+      height: 10px;
+      border: 1px solid var(--border);
+      background: #000;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .stat-meter-fill {
+      height: 100%;
+      background: var(--accent);
+    }
+
+    /* Screen letter styling */
+    .letter-document {
+      background: #faf3e0; /* Traditional paper soft cream tint for deep high-contrast readable cursive letter */
+      border: 1px solid #d3cbb6;
+      color: #1c1c1c;
+      padding: 48px;
+      min-height: 380px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      font-family: var(--cursive);
+      font-size: 20px;
+      line-height: 1.8;
+      margin-bottom: 32px;
+      animation: emerge 1.2s ease forwards;
+    }
+
+    @keyframes emerge {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .letter-document strong {
+      color: var(--accent);
+    }
+
+    /* Responsive IFrame container for TELA 09 youtube video */
+    .video-frame-container {
+      position: relative;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      height: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #000000;
+      margin-bottom: 24px;
+    }
+
+    .video-frame-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+
+    /* Global screen flash mechanism */
+    #flash {
+      position: fixed;
+      inset: 0;
+      background: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 9999;
+      transition: opacity 0.08s ease-out;
+    }
+
+    #flash.trigger {
+      opacity: 0.95;
+    }
+
+    /* Typewriter blinking cursor styling */
+    .typing-cursor::after {
+      content: '█';
+      animation: blink 0.8s infinite;
+      color: var(--accent);
+      margin-left: 2px;
+    }
+
+    /* Responsive adaptations */
+    @media (max-width: 600px) {
+      .card {
+        padding: 32px 20px;
+      }
+      h1 {
+        font-size: 26px;
+      }
+      .candidate-grid {
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      .candidate-avatar {
+        width: 120px;
+        height: 120px;
+      }
+      .option-grid {
+        grid-template-columns: 1fr;
+      }
+      .letter-document {
+        padding: 28px 20px;
+        font-size: 18px;
+        line-height: 1.6;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen Flash -->
+  <div id="flash"></div>
+
+  <!-- ══════════════════════════════════
+       TELA 01 — INPUT INICIAL
+  ══════════════════════════════════ -->
+  <div class="screen active" id="screen-input">
+    <div class="card" data-label="DIAG_INIT_01.EXE">
+      <div class="phase-tag">MÓDULO 01 / VECTOR DE ENTRADA</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 10%"></div></div>
+
+      <h1>O que está na sua<br><em>cabeça agora?</em></h1>
+      <p class="sub">
+        Transcreva uma imagem, um sentimento, uma sensação.<br>
+        Uma frase solta sem destinatário lógico.<br>
+        <span style="color: var(--accent); opacity: 0.6;">// o sistema iniciará a interpretação cibernética.</span>
+      </p>
+
+      <textarea id="main-input" placeholder="digite aqui o que reside na sua mente..." maxlength="120" oninput="updateCharCount()"></textarea>
+      <div class="char-count"><span id="char-current">0</span>/120</div>
+
+      <button class="btn" id="btn-input-next" onclick="goToScreen('screen-quiz')">ANALISAR PENSAMENTO →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 02 — QUIZ DE TRAUMAS & CONEXÃO
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-quiz">
+    <div class="card" data-label="MAPEAMENTO_PSI_02">
+      <div class="phase-tag">MÓDULO 02 / MAPEAMENTO COMPORTAMENTAL</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 30%"></div></div>
+
+      <h1>Inventário de Padrões<br><em>Afetivos & Traumas</em></h1>
+      <p class="sub">
+        Classifique o nível de desconforto/rechaço a estes comportamentos (0 = Tolerável | 5 = Repúdio Total), seguido de suas aspirações básicas de ligação emocional.
+      </p>
+
+      <!-- Parte A: Escala de Traumas -->
+      <div class="quiz-section-title">SEC.A — INVENTÁRIO DE TRAUMAS (ESCALA 0-5)</div>
+      
+      <div id="trauma-questions">
+        <!-- Generatively rendered via JS for extreme fidelity -->
+      </div>
+
+      <!-- Parte B: Conexão Afetiva -->
+      <div class="quiz-section-title">SEC.B — SINTONIA AFETIVA & COMPONENTES</div>
+
+      <!-- Q11 -->
+      <div class="scale-row">
+        <label class="scale-question">11. Como você prefere receber demonstração de carinho?</label>
+        <div class="option-grid" id="opt-q11">
+          <button class="option-btn" onclick="selectAffection(this, 11, 'Conversas longas')">Conversas longas</button>
+          <button class="option-btn" onclick="selectAffection(this, 11, 'Tempo de qualidade')">Tempo de qualidade</button>
+          <button class="option-btn" onclick="selectAffection(this, 11, 'Gestos inesperados')">Gestos inesperados</button>
+          <button class="option-btn" onclick="selectAffection(this, 11, 'Apoio / Prestatividade')">Apoio</button>
+        </div>
+      </div>
+
+      <!-- Q12 -->
+      <div class="scale-row">
+        <label class="scale-question">12. Qual a configuração do seu encontro perfeito?</label>
+        <div class="option-grid" id="opt-q12">
+          <button class="option-btn" onclick="selectAffection(this, 12, 'Restaurante reservado')">Restaurante</button>
+          <button class="option-btn" onclick="selectAffection(this, 12, 'Cinema aconchegante')">Cinema</button>
+          <button class="option-btn" onclick="selectAffection(this, 12, 'Viagem inesperada')">Viagem</button>
+          <button class="option-btn" onclick="selectAffection(this, 12, 'Lugar simples / Perto do coração')">Lugar simples</button>
+        </div>
+      </div>
+
+      <!-- Q13 -->
+      <div class="scale-row">
+        <label class="scale-question">13. Qual qualidade você mais admira em outro humano?</label>
+        <div class="option-grid" id="opt-q13">
+          <button class="option-btn" onclick="selectAffection(this, 13, 'Inteligência profunda')">Inteligência</button>
+          <button class="option-btn" onclick="selectAffection(this, 13, 'Determinação obstinada')">Determinação</button>
+          <button class="option-btn" onclick="selectAffection(this, 13, 'Carinho e empatia')">Carinho</button>
+          <button class="option-btn" onclick="selectAffection(this, 13, 'Bom humor e leveza')">Bom humor</button>
+        </div>
+      </div>
+
+      <!-- Q14 -->
+      <div class="scale-row">
+        <label class="scale-question">14. Em uma escala de 0 a 10, qual o seu apreço por estar namorando?</label>
+        <div class="scale-opt-10" id="opt-q14">
+          <!-- Small buttons 0 to 10 mapped via js -->
+        </div>
+      </div>
+
+      <!-- Q15 -->
+      <div class="scale-row">
+        <label class="scale-question">15. Qual o pilar central para você realmente confiar?</label>
+        <div class="option-grid" id="opt-q15">
+          <button class="option-btn" onclick="selectAffection(this, 15, 'Lealdade incondicional')">Lealdade</button>
+          <button class="option-btn" onclick="selectAffection(this, 15, 'Honestidade absoluta')">Honestidade</button>
+          <button class="option-btn" onclick="selectAffection(this, 15, 'Companheirismo resiliente')">Companheirismo</button>
+          <button class="option-btn" onclick="selectAffection(this, 15, 'Responsabilidade comum')">Responsabilidade</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 40px; text-align: right;">
+        <button class="btn" id="btn-quiz-next" disabled onclick="goToScreen('screen-decrypt')">GERAR PROTOCOLO SECUNDÁRIO →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 03 — PROTOCOLO DE DESCRIPTOGRAFIA
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-decrypt">
+    <div class="card" data-label="ENCR_BYPASS_03">
+      <div class="phase-tag">MÓDULO 03 / VALIDAÇÃO DE CAMADA</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 50%"></div></div>
+
+      <h1>Desafio Técnico de<br><em>Descriptografia</em></h1>
+      <p class="sub">
+        Filtros adicionais para calibração de redundância do terminal.
+      </p>
+
+      <!-- Q16 -->
+      <div class="scale-row">
+        <label class="scale-question">16. Fraqueza assumida por bateristas?</label>
+        <div class="option-grid" id="opt-q16">
+          <button class="option-btn" onclick="selectProtocol(this, 16, 'Sim')">Sim, infelizmente</button>
+          <button class="option-btn" onclick="selectProtocol(this, 16, 'Não')">Absolutamente não</button>
+          <button class="option-btn" onclick="selectProtocol(this, 16, 'Apenas no palco')">Diferenciado cientificamente</button>
+        </div>
+      </div>
+
+      <!-- Q17 -->
+      <div class="scale-row">
+        <label class="scale-question">17. Você sente alguma atração/admiraNerds de TI?</label>
+        <div class="option-grid" id="opt-q17">
+          <button class="option-btn" onclick="selectProtocol(this, 17, 'Sim')">Sim, bastante</button>
+          <button class="option-btn" onclick="selectProtocol(this, 17, 'Não')">Zero interesse</button>
+          <button class="option-btn" onclick="selectProtocol(this, 17, 'Com certeza')">É o modelo ideal</button>
+        </div>
+      </div>
+
+      <!-- Q18 -->
+      <div class="scale-row">
+        <label class="scale-question">18. Qual carro ideal para andar enquanto você dorme no carona?</label>
+        <div class="option-grid" id="opt-q18">
+          <button class="option-btn" onclick="handleCarSelect(this, 'Volvo')" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; align-items: stretch; height: auto;">
+            <img src="data:image/jpeg;base64,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" alt="Volvo" class="car-img" style="width: 100%; height: 90px; object-fit: cover; border: 1px solid var(--border); filter: grayscale(1) contrast(1.2) brightness(0.8) sepia(0.2) hue-rotate(325deg);" referrerPolicy="no-referrer">
+            <span style="font-family: var(--mono); text-align: center; font-size: 11px; letter-spacing: 0.1em; display: block; width: 100%;">Volvo</span>
+          </button>
+          <button class="option-btn" onclick="handleCarSelect(this, 'GWM')" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; align-items: stretch; height: auto;">
+            <img src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&amp;fit=crop&amp;q=80&amp;w=400" alt="GWM" class="car-img" style="width: 100%; height: 90px; object-fit: cover; border: 1px solid var(--border); filter: grayscale(1) contrast(1.2) brightness(0.8) sepia(0.2) hue-rotate(325deg);" referrerPolicy="no-referrer">
+            <span style="font-family: var(--mono); text-align: center; font-size: 11px; letter-spacing: 0.1em; display: block; width: 100%;">GWM</span>
+          </button>
+          <button class="option-btn" onclick="handleCarSelect(this, 'Fusca')" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; align-items: stretch; height: auto;">
+            <img src="https://images.unsplash.com/photo-1506015391300-4802dc74de2e?auto=format&amp;fit=crop&amp;q=80&amp;w=400" alt="Fusca" class="car-img" style="width: 100%; height: 90px; object-fit: cover; border: 1px solid var(--border); filter: grayscale(1) contrast(1.1) brightness(0.85) sepia(0.2) hue-rotate(325deg);" referrerPolicy="no-referrer">
+            <span style="font-family: var(--mono); text-align: center; font-size: 11px; letter-spacing: 0.1em; display: block; width: 100%;">Fusca</span>
+          </button>
+          <button class="option-btn" id="byd-seal-btn" onclick="handleCarSelect(this, 'BYD Seal')" style="display: flex; flex-direction: column; gap: 8px; padding: 12px; align-items: stretch; height: auto;">
+            <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlJCaZ1GF6pvbF0oRfcnKZsRG9uWBWQ9KnvQ&s" alt="BYD Seal" class="car-img" style="width: 100%; height: 90px; object-fit: cover; border: 1px solid var(--border); filter: grayscale(1) contrast(1.2) brightness(0.8) sepia(0.2) hue-rotate(325deg);" referrerPolicy="no-referrer">
+            <span style="font-family: var(--mono); text-align: center; font-size: 11px; letter-spacing: 0.1em; display: block; width: 100%;">BYD Seal</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="terminal-console" id="decrypt-log"></div>
+
+      <div style="margin-top: 40px; text-align: right;">
+        <button class="btn ghost" id="btn-advance-decrypt" disabled onclick="goToScreen('screen-login')">FAZER LOGIN RESTRITO →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 04 — LOGIN RESTRITO
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-login">
+    <div class="card" data-label="KEY_VALIDATION_04">
+      <div class="phase-tag">MÓDULO 04 / ENTRADA CRIPTOGRÁFICA</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 65%"></div></div>
+
+      <h1>Insira a Chave de<br><em>Acesso Desencriptada</em></h1>
+      <p class="sub">
+        Para descriptografar o perfil e analisar sentimentos redundantes, digite o Token de Acesso obtido na etapa anterior.
+      </p>
+
+      <div class="key-prompt-wrapper">
+        <div class="prompt-cursor">></div>
+        <input type="text" class="prompt-input" id="login-pass-input" placeholder="DIGITE CONFIG..." oninput="checkPasswordReady()">
+      </div>
+      
+      <div id="login-error-msg" style="color: var(--accent); font-size: 11px; margin-bottom: 20px; display: none; letter-spacing: 0.1em;">
+        // TOKEN DE ACESSO REJEITADO. REVERIFIQUE A ENTRADA.
+      </div>
+
+      <button class="btn" id="btn-login" disabled onclick="validateAndGoToTerminal()">VALIDAR CREDENCIAIS →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 05 — TERMINAL GEMINI (A CHAMADA REAL)
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-terminal" style="background: #000000;">
+    <div class="card" data-label="GEMINI_CORE_PIPELINE" style="background: #000; border-color: #222; max-width: 680px;">
+      <div class="phase-tag">MÓDULO 05 / MOTOR DE CORRESPONDÊNCIA</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 80%"></div></div>
+
+      <h1 style="color: #4df33b; font-family: var(--mono); font-size: 26px;">
+        AI_CHIP_SEQUENCER_ACTIVE: <span style="color: #ffffff;">GEMINI-3.5-FLASH</span>
+      </h1>
+
+      <div class="live-hacker-logs" id="terminal-logs-window">
+        <!-- Simulated dynamic console typing will execute here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 06 — ANÁLISE FORMAL DO GEMINI
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-analysis">
+    <div class="card" data-label="GEMINI_AI_ANALYSIS">
+      <div class="phase-tag">MÓDULO 06 / LAUDO COMPORTAMENTAL</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 90%"></div></div>
+
+      <h1>Diagnóstico Automatizado<br><em>Gemini Core AI</em></h1>
+      
+      <!-- Raw text returned by Gemini typewriter -->
+      <div style="font-family: var(--serif); font-size: 17px; line-height: 1.8; color: #ededed; margin-bottom: 28px; font-style: italic; min-height: 180px; white-space: pre-wrap; word-break: break-word;" id="gemini-ai-text-box" class="typing-cursor">
+        <!-- AI Response typed out character by character -->
+      </div>
+
+      <!-- Beautiful Google Gemini Logo badge -->
+      <div id="gemini-logo-container" style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: -10px; opacity: 0; transition: opacity 1.5s ease-in-out; margin-bottom: 28px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 8px rgba(117, 139, 253, 0.6));">
+          <path d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z" fill="url(#geminiGradient)"/>
+          <defs>
+            <linearGradient id="geminiGradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#9bc5ff"/>
+              <stop offset="50%" stop-color="#bf9fff"/>
+              <stop offset="100%" stop-color="#ff9fe6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span style="font-family: var(--mono); font-size: 13px; letter-spacing: 0.2em; color: #b0c9ff; transform: translateY(1px); font-weight: bold; text-shadow: 0 0 10px rgba(191, 159, 255, 0.3);">MODEL DEEP_GEMINI_1.5_PRO</span>
+      </div>
+
+      <div class="check-block">
+        <span class="check-item">✓ Inteligência</span> | 
+        <span class="check-item">✓ Determinação</span> | 
+        <span class="check-item">✓ Capacidade de ouvir</span> | 
+        <span class="check-item">✓ Nerdice preocupante</span> | 
+        <span class="check-item">✓ Bom humor</span> | 
+        <span class="check-item">✓ Ambição</span> | 
+        <span class="check-item">✓ Carinho</span> | 
+        <span class="check-item">✓ Transformar sentimentos em projetos complexos</span>
+      </div>
+
+      <div class="compat-block">
+        <h3>1 CANDIDATO COMPATÍVEL DETECTADO</h3>
+        <p>
+          Compatibilidade Geral: <strong>99.8%</strong><br>
+          Observação do Algoritmo: O sistema não considera esse resultado estatisticamente normal dentro de amostras padrão.
+        </p>
+      </div>
+
+      <button class="btn filled" onclick="goToScreen('screen-candidato')">[ ACESSAR PERFIL DO CANDIDATO ]</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 07 — CARD CANDIDATO (RICARDO)
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-candidato">
+    <div class="card" data-label="CONFIDENTIAL_DOSSIER">
+      <div class="phase-tag">MÓDULO 07 / REVELAÇÃO DO ARQUIVO</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 95%"></div></div>
+
+      <h1>Ficha Geral do Candidato</h1>
+      <p class="sub">
+        Estatísticas compiladas de ressonância comportamental.
+      </p>
+
+      <div class="candidate-grid">
+        <!-- Square placeholder with ASCII ART for hacker atmosphere -->
+        <div class="candidate-avatar">
+          <img id="ricardo-avatar-img" src="/IMG_20251114_112002_769.webp" alt="Ricardo" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; transform: scale(1.0); z-index: 2; display: block;" onerror="fallbackCandidateAvatar(this)" referrerPolicy="no-referrer">
+          <div class="avatar-icon-ascii">
+            /\_/\
+           ( o.o )
+            &gt; ^ &lt;
+            [ GEEK ]
+             RICARDO
+          </div>
+        </div>
+
+        <div class="candidate-metadata">
+          <div class="meta-line">
+            <span class="meta-key">Status:</span>
+            <span class="meta-val" style="color: #4df33b; font-weight: bold;">Disponível</span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-key">Localização:</span>
+            <span class="meta-val">Guará, DF</span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-key">Compatibilidade:</span>
+            <span class="meta-val" style="color: var(--accent); font-weight: bold;">99.8%</span>
+          </div>
+          <div class="meta-line">
+            <span class="meta-key">Nível de Risco:</span>
+            <span class="meta-val" style="color: var(--accent);">Elevado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stat Bars -->
+      <div class="stat-bars-section">
+        <div>
+          <div class="stat-label-bar">
+            <span>STACKING TÉCNICA (CIBERNÉTICA)</span>
+            <span>99%</span>
+          </div>
+          <div class="stat-meter-container">
+            <div class="stat-meter-fill" style="width: 99%;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="stat-label-bar">
+            <span>PROCESSAMENTO COGNITIVO</span>
+            <span>95%</span>
+          </div>
+          <div class="stat-meter-container">
+            <div class="stat-meter-fill" style="width: 95%;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="stat-label-bar">
+            <span>ROADMAP DE COMPROMISSO</span>
+            <span>85%</span>
+          </div>
+          <div class="stat-meter-container">
+            <div class="stat-meter-fill" style="width: 85%;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="stat-label-bar">
+            <span>LATÊNCIA EM DAR CARINHO / RESPOSTA</span>
+            <span>10% (Altamente Responsivo)</span>
+          </div>
+          <div class="stat-meter-container">
+            <div class="stat-meter-fill" style="width: 10%;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="stat-label-bar">
+            <span>DEDICAÇÃO TOTAL</span>
+            <span>100%</span>
+          </div>
+          <div class="stat-meter-container">
+            <div class="stat-meter-fill" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn filled" style="width: 100%; justify-content: center;" onclick="goToScreen('screen-carta')">ESCOLHER ESTE CANDIDATO →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 08 — CARTA MANUSCRITA
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-carta">
+    <div class="card" data-label="UNENCRYPTED_MESSAGE" style="max-width: 680px;">
+      <div class="phase-tag">MÓDULO 08 / VETOR EMOCIONAL BRUTO</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 99%"></div></div>
+
+      <h1 style="margin-bottom: 24px;">Exposição Final da Mensagem</h1>
+
+      <!-- COLOQUE SUA CARTA AQUI -->
+      <div class="letter-document">
+        Querida, <br><br>
+        Há sentimentos que não cabem em códigos frios, relatórios estatísticos ou bancos de dados redundantes. O afeto verdadeiro é um paradoxo que foge a qualquer amostragem matemática tradicional.<br><br>
+        Se você trilhou todo esse caminho, desintegrou firewalls, resolveu inventários psicológicos de traumas e digitou uma senha especial, significa que você confiou no meu fluxo.<br><br>
+        Quero afastar de uma vez qualquer suposição irônica do sistema: <strong>eu gosto de verdade de você.</strong> Do jeito que sou (um nerd prestativo, ligado em TI, às vezes preocupado com redundâncias), mas principalmente focado em ver você feliz.<br><br>
+        Espero do fundo do meu coração que essa pequena engenharia digital tenha traduzido um sentimento que na vida verbal às vezes gagueja, mas que no fundo, pulsa de forma incondicional.<br><br>
+
+        <!-- Elegant heart separator -->
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 32px 0 24px 0;">
+          <div style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, #bda27e, transparent);"></div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#a82323" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 4px rgba(168,35,35,0.4));">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <div style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, #bda27e, transparent);"></div>
+        </div>
+
+        <!-- Elegant printed Sonnet block -->
+        <div class="sonnet-card" style="font-family: var(--serif); font-size: 16px; font-style: italic; line-height: 1.8; color: #2d2d2d; text-align: center; margin: 28px 0; padding: 24px; border: 1px dashed #d3cbb6; background: rgba(255, 255, 255, 0.4); box-shadow: inset 0 0 10px rgba(0,0,0,0.02); border-radius: 4px;">
+          <p style="margin-bottom: 20px; white-space: pre-wrap;">Se você um dia ausentar-se da minha vida,
+Eu já não saberia mensurar tamanha dor,
+Pois é impossível ver um mundo sem o seu amor,
+Sem você, o meu motor vital não dá partida.</p>
+          <p style="margin-bottom: 20px; white-space: pre-wrap;">"A" de Ágatha e Amorosa, força tão sutil,
+Que aquece a minha alma com um gentil calor.
+Não há métrica que consiga calcular seu valor,
+Você hackeou e transformou o meu perfil.</p>
+          <p style="margin-bottom: 20px; white-space: pre-wrap;">Quantas palavras precisaria descrever ou inventar,
+Para explicar essa frequência que viaja pelo ar?
+Como o sinal perfeito de Wi-Fi buscando a sua antena,</p>
+          <p style="margin-bottom: 20px; white-space: pre-wrap;">Meu único arrependimento é o tempo de atraso,
+De não te ter amado muito antes do nosso acaso,
+Mas hoje, com um mês, você já é minha melhor cena.</p>
+          <p style="margin-top: 24px; font-weight: bold; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6e5c46; line-height: 1.6; border-top: 1px solid #d3cbb6; padding-top: 16px;">
+            Escrito por Seu amor, para Minha Aghata, Meu amor.<br>
+            <span style="color: #a82323; font-weight: bold;">Feliz Mesiversário de namoro amor te amo.</span>
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin: 24px 0 32px 0;">
+          <div style="flex: 1; height: 1px; background: linear-gradient(to right, transparent, #bda27e, transparent);"></div>
+        </div>
+
+        Com carinho e dedicação,<br>
+        Ricardo.
+      </div>
+
+      <button class="btn filled" style="width: 100%; justify-content: center;" onclick="goToScreen('screen-video')">CONTINUAR →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 09 — CLÍMAX DO VÍDEO
+  ══════════════════════════════════ -->
+  <div class="screen" id="screen-video">
+    <div class="card" data-label="RICARDO_PERFORMANCES" style="text-align: center; max-width: 680px; margin: 0 auto;">
+      <div class="phase-tag">MÓDULO 09 / CONCLUSÃO DO FLUXO</div>
+      <div class="progress-bar"><div class="progress-fill" style="width: 100%"></div></div>
+
+      <h1 style="text-align: center; margin-bottom: 8px;">O Ritmo da Sintonia.</h1>
+      <p class="sub" style="margin-bottom: 28px; text-align: center;">Vetor completado com ressonância máxima. O sistema decodificou a frequência exata.</p>
+
+      <!-- Drum performances containers -->
+      <div style="display: flex; flex-direction: column; gap: 32px; text-align: left; margin-bottom: 24px;">
+        
+        <div style="border: 1px solid var(--border); padding: 16px; background: rgba(255, 255, 255, 0.02); border-radius: 4px;">
+          <h3 style="font-family: var(--mono); font-size: 11px; color: #9bc5ff; margin-bottom: 12px; letter-spacing: 0.12em; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+            <span style="display: inline-block; width: 6px; height: 6px; background-color: #9bc5ff; border-radius: 50%; box-shadow: 0 0 8px #9bc5ff; animation: pulse 1.5s infinite;"></span>
+            SYSTEM.VIDEO_PLAYBACK // TRACK_01: ALWAYS2 (DRUMS)
+          </h3>
+          <div class="video-frame-container" style="margin-bottom: 0;">
+            <iframe src="https://www.youtube.com/embed/1NRWFYFJqKk" title="Always2" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          </div>
+        </div>
+
+        <div style="border: 1px solid var(--border); padding: 16px; background: rgba(255, 255, 255, 0.02); border-radius: 4px;">
+          <h3 style="font-family: var(--mono); font-size: 11px; color: #bf9fff; margin-bottom: 12px; letter-spacing: 0.12em; display: flex; align-items: center; gap: 8px; font-weight: bold;">
+            <span style="display: inline-block; width: 6px; height: 6px; background-color: #bf9fff; border-radius: 50%; box-shadow: 0 0 8px #bf9fff; animation: pulse 1.5s infinite;"></span>
+            SYSTEM.VIDEO_PLAYBACK // TRACK_02: FOR YOU (DRUMS)
+          </h3>
+          <div class="video-frame-container" style="margin-bottom: 0;">
+            <iframe src="https://www.youtube.com/embed/c_dcOfv0aDg" title="For You" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.15em; margin-top: 16px;">
+        // transmissão encerrada com 99.8% de ressonância. todos os canais sincronizados.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════
+       JAVASCRIPT SECTIONS
+  ══════════════════════════════════ -->
+  <script>
+    // Global error listener to prevent some sandboxes/extensions or Vite WS closures from crashing/overlaying the app
+    window.addEventListener('error', function(e) {
+      if (e && e.message && (
+        e.message.includes('Cannot set property fetch') ||
+        e.message.includes('only a getter') ||
+        e.message.includes('fetch') ||
+        e.message.includes('WebSocket') ||
+        e.message.includes('websocket')
+      )) {
+        console.warn('Prevented native browser/extension exception:', e.message);
+        e.preventDefault();
+        e.stopPropagation();
+        return true;
+      }
+    }, true);
+
+    // Silence ALL unhandledrejection events (typically triggered by sandbox WebSocket disconnecting)
+    window.addEventListener('unhandledrejection', function(e) {
+      if (e && e.reason && (
+        String(e.reason).includes('WebSocket') ||
+        String(e.reason.message).includes('WebSocket') ||
+        String(e.reason).includes('vite') ||
+        String(e.reason.message).includes('vite')
+      )) {
+        console.warn('Silended benign sandbox WebSocket promise rejection:', e.reason);
+        e.preventDefault();
+        e.stopPropagation();
+        return true;
+      }
+    }, true);
+
+    // Continuous cleaner to purge any developer service overlays (e.g. Vite crash overlay)
+    setInterval(() => {
+      try {
+        const overlay = document.querySelector('vite-error-overlay');
+        if (overlay) {
+          overlay.remove();
+        }
+        // Also look inside shadow roots
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach(el => {
+          if (el.shadowRoot) {
+            const shadowOverlay = el.shadowRoot.querySelector('vite-error-overlay') || el.shadowRoot.querySelector('.overlay');
+            if (shadowOverlay) {
+              shadowOverlay.remove();
+            }
+          }
+        });
+      } catch (err) {
+        // Silent recovery
+      }
+    }, 250);
+
+    // Safeguard for browser extensions or sandboxes attempting to patch window.fetch
+    (function() {
+      try {
+        const originalFetch = window.fetch;
+        let backingFetch = originalFetch;
+        Object.defineProperty(window, 'fetch', {
+          get: function() {
+            return backingFetch;
+          },
+          set: function(val) {
+            backingFetch = val;
+          },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {
+        // Fallback or silent catch if the sandbox is too strict
+      }
+    })();
+
+    // System State Tracking
+    const AppState = {
+      mainInput: '',
+      traumas: {},
+      conexao: {},
+      protocolo: {},
+      aiResultText: ''
+    };
+
+    // Trauma list items
+    const TRAUMAS_LIST = [
+      "Joguinhos emocionais",
+      "Uso para benefício próprio",
+      "Não saber conversar",
+      "Ciúmes/controle",
+      "Falta de plano para o futuro",
+      "Indiferença",
+      "Mentiras",
+      "Sem objetivos claros",
+      "Falta de reciprocidade",
+      "Não compartilhar problemas"
+    ];
+
+    // Fallback if image fails to load
+    function fallbackCandidateAvatar(img) {
+      img.onerror = function() {
+        img.style.display = 'none';
+        const ascii = document.getElementById('ricardo-avatar-ascii');
+        if (ascii) {
+          ascii.style.display = 'flex';
+        }
+      };
+    }
+
+    // Bootstrap DOM inputs dynamically for consistency
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTraumaTable();
+      renderNamorandoScale();
+    });
+
+    // 1. Textarea character counter check
+    function updateCharCount() {
+      const input = document.getElementById('main-input');
+      const count = document.getElementById('char-current');
+      count.textContent = input.value.length;
+      AppState.mainInput = input.value;
+    }
+
+    // Render Trauma Score Elements
+    function renderTraumaTable() {
+      const container = document.getElementById('trauma-questions');
+      container.innerHTML = '';
+
+      TRAUMAS_LIST.forEach((t, index) => {
+        const questionNum = String(index + 1).padStart(2, '0');
+        const row = document.createElement('div');
+        row.className = 'scale-row';
+        row.innerHTML = `
+          <div class="scale-question">${questionNum}. ${t}</div>
+          <div class="scale-options" data-trauma="${t}">
+            <button class="scale-btn" onclick="selectTrauma(this, '${t}', 0)">0</button>
+            <button class="scale-btn" onclick="selectTrauma(this, '${t}', 1)">1</button>
+            <button class="scale-btn" onclick="selectTrauma(this, '${t}', 2)">2</button>
+            <button class="scale-btn" onclick="selectTrauma(this, '${t}', 3)">3</button>
+            <button class="scale-btn" onclick="selectTrauma(this, '${t}', 4)">4</button>
+            <button class="scale-btn" onclick="selectTrauma(this, '${t}', 5)">5</button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // Handle Trauma Level Clicks
+    function selectTrauma(button, traumaKey, value) {
+      // De-select siblings
+      const optionsContainer = button.parentElement;
+      const buttons = optionsContainer.querySelectorAll('.scale-btn');
+      buttons.forEach(b => b.classList.remove('selected'));
+      
+      // Select clicked
+      button.classList.add('selected');
+      AppState.traumas[traumaKey] = value;
+      validateQuizComplete();
+    }
+
+    // Render 0-10 Scale
+    function renderNamorandoScale() {
+      const container = document.getElementById('opt-q14');
+      container.innerHTML = '';
+      for (let i = 0; i <= 10; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'btn-small-10';
+        btn.textContent = i;
+        btn.onclick = () => {
+          const siblings = container.querySelectorAll('.btn-small-10');
+          siblings.forEach(s => s.classList.remove('selected'));
+          btn.classList.add('selected');
+          AppState.conexao['14. Gosto por namorar'] = i;
+          validateQuizComplete();
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    // Handle multiple-choice clicks
+    function selectAffection(btn, questionNum, selectionValue) {
+      const section = document.getElementById(`opt-q${questionNum}`);
+      const buttons = section.querySelectorAll('.option-btn');
+      buttons.forEach(b => b.classList.remove('selected'));
+      
+      // Find exact clicked button
+      btn.classList.add('selected');
+      
+      let key = '';
+      if(questionNum === 11) key = "11. Demonstração de carinho";
+      if(questionNum === 12) key = "12. Encontro perfeito";
+      if(questionNum === 13) key = "13. Admirar alguém";
+      if(questionNum === 15) key = "15. Qualidade para confiar";
+
+      AppState.conexao[key] = selectionValue;
+      validateQuizComplete();
+    }
+
+    // Quick validation to allow Module 02 advancement
+    function validateQuizComplete() {
+      // Must cover all 10 traumas
+      const traumasSelected = Object.keys(AppState.traumas).length === 10;
+      
+      // Must cover all 5 affection choices
+      const connectionsSelected = 
+       AppState.conexao['11. Demonstração de carinho'] !== undefined &&
+       AppState.conexao['12. Encontro perfeito'] !== undefined &&
+       AppState.conexao['13. Admirar alguém'] !== undefined &&
+       AppState.conexao['14. Gosto por namorar'] !== undefined &&
+       AppState.conexao['15. Qualidade para confiar'] !== undefined;
+
+      const actButton = document.getElementById('btn-quiz-next');
+      if (traumasSelected && connectionsSelected) {
+        actButton.removeAttribute('disabled');
+      } else {
+        actButton.setAttribute('disabled', 'true');
+      }
+    }
+
+    // Handle protocol select 
+    function selectProtocol(btn, questionNum, selectionValue) {
+      const containerId = `opt-q${questionNum}`;
+      const section = document.getElementById(containerId);
+      const buttons = section.querySelectorAll('.option-btn');
+      buttons.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      let key = questionNum === 16 ? "16. Fraqueza por bateristas?" : "17. Curte Nerd de TI?";
+      AppState.protocolo[key] = selectionValue;
+    }
+
+    // Handle Car decision (Specific bypass logic)
+    function handleCarSelect(btn, carType) {
+      const section = document.getElementById('opt-q18');
+      const buttons = section.querySelectorAll('.option-btn');
+      buttons.forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      AppState.protocolo['18. Carro ideal para andar com ela dormindo?'] = carType;
+
+      if(carType === 'BYD Seal') {
+        runDecryptTypewriter();
+      } else {
+        // Mock simple feedback but direct button is locked typical response
+        const consoleLog = document.getElementById('decrypt-log');
+        consoleLog.style.display = 'block';
+        consoleLog.innerHTML = `> REGISTRO DE REDUNDÂNCIA: Carro "${carType}" armazenado. Status: Cuidado detectado. Credencial de segurança restrita recusada. Escolha o vetor ideal BYD.`;
+        document.getElementById('btn-advance-decrypt').setAttribute('disabled', 'true');
+        document.getElementById('btn-advance-decrypt').className = 'btn ghost';
+      }
+    }
+
+    // Typewriter emulation for BYDSEAL unlock
+    function runDecryptTypewriter() {
+      const consoleLog = document.getElementById('decrypt-log');
+      consoleLog.style.display = 'block';
+      consoleLog.innerHTML = '';
+      
+      const message = "Resposta registrada... Executando protocolo de descriptografia... Chave de acesso encontrada: BYDSEAL";
+      let cursor = 0;
+      
+      function type() {
+        if(cursor < message.length) {
+          consoleLog.innerHTML += message.charAt(cursor);
+          cursor++;
+          setTimeout(type, 35);
+        } else {
+          // Release advance button
+          const btn = document.getElementById('btn-advance-decrypt');
+          btn.removeAttribute('disabled');
+          btn.classList.remove('ghost');
+          btn.classList.add('filled');
+        }
+      }
+      type();
+    }
+
+    // Enable/Disable login button based on key typed
+    function checkPasswordReady() {
+      const pass = document.getElementById('login-pass-input').value.trim();
+      const loginBtn = document.getElementById('btn-login');
+      if (pass.length > 0) {
+        loginBtn.removeAttribute('disabled');
+      } else {
+        loginBtn.setAttribute('disabled', 'true');
+      }
+    }
+
+    // Validate BYDSEAL credentials and trigger Gemini analyze pipeline
+    function validateAndGoToTerminal() {
+      const pass = document.getElementById('login-pass-input').value.trim().toUpperCase();
+      if(pass === 'BYDSEAL') {
+        document.getElementById('login-error-msg').style.display = 'none';
+        goToScreen('screen-terminal');
+        startGeminiAPIPipeline();
+      } else {
+        document.getElementById('login-error-msg').style.display = 'block';
+        triggerFlash();
+      }
+    }
+
+    // Main terminal load + production trigger
+    function startGeminiAPIPipeline() {
+      const consoleWindow = document.getElementById('terminal-logs-window');
+      consoleWindow.innerHTML = '';
+
+      const logs = [
+        "> CONFIGURANDO CANAL DE SEGURANÇA SSL...",
+        "> ENVIANDO PACOTES DE DADOS COMPORTAMENTAIS...",
+        "> CONECTANDO AO SERVIDOR SEGURO DA API...",
+        "> REQUISITANDO MOTOR CORE DO GEMINI API...",
+        "> COMPILANDO MATRIZ DE TRAUMAS...",
+        "> CRUNCHING DATA..."
+      ];
+
+      let delay = 0;
+      logs.forEach((line) => {
+        setTimeout(() => {
+          const p = document.createElement('p');
+          p.textContent = line;
+          consoleWindow.appendChild(p);
+          consoleWindow.scrollTop = consoleWindow.scrollHeight;
+        }, delay);
+        delay += 800;
+      });
+
+      // Simulation completion & safe transition to analysis
+      setTimeout(() => {
+        const ok = document.createElement('p');
+        ok.style.color = '#4df33b';
+        ok.textContent = "> CONEXÃO COM GEMINI CORE ESTABELECIDA COM SUCESSO.";
+        consoleWindow.appendChild(ok);
+        consoleWindow.scrollTop = consoleWindow.scrollHeight;
+
+        setTimeout(() => {
+          const loadingText = document.createElement('p');
+          loadingText.style.color = '#b0c9ff';
+          loadingText.textContent = "> INICIANDO TRANSMISSÃO DE DIAGNÓSTICO REVERSO INTEGRADO...";
+          consoleWindow.appendChild(loadingText);
+          consoleWindow.scrollTop = consoleWindow.scrollHeight;
+        }, 500);
+
+        // Transition automatically to results screen
+        setTimeout(() => {
+          AppState.aiResultText = `Após processar o histórico de interações entre 13/05 e 28/05, o padrão observado não é o de uma conexão casual, mas o de uma estrutura afetiva em consolidação.
+
+O dado central não está em uma única frase, mas na repetição de três sinais consistentes: validação, reciprocidade e estabilidade emocional. Quando a comunicação falha, existe preocupação real de ambos os lados. Quando um cansa, o outro não abandona: regula, responde, acolhe e mantém o vínculo vivo. Isso aparece com clareza quando o sistema identifica medo de afastamento, necessidade de explicação, pedido de presença e resposta imediata de cuidado.
+
+[PADRÕES OBSERVADOS]
+- Vocês não tratam o vínculo como passatempo.
+- Há forte necessidade mútua de clareza e confirmação.
+- O humor não serve para esconder indiferença; ele funciona como ponte.
+- A reciprocidade é explícita: ambos procuram, ambos sustentam, ambos voltam.
+- Existe tolerância baixa para relações vazias, frias ou ambíguas.
+
+[TRAÇOS DOMINANTES]
+- Inteligência relacional.
+- Leitura rápida do estado emocional do outro.
+- Capacidade de falar sobre coisas profundas sem perder leveza.
+- Valorização de futuro, propósito e constância.
+- Rejeição clara de jogos emocionais, sumiços e vínculos sem direção.
+
+[NECESSIDADES AFETIVAS]
+- Segurança.
+- Resposta consistente.
+- Sensação de ser escolhido de forma consciente.
+- Presença real em momentos de crise.
+- Espaço para ser inteiro, sem precisar performar fragilidade falsa.
+
+[COMPATIBILIDADE DETECTADA]
+O sistema não encontrou apenas atração; encontrou espelhamento funcional.
+Vocês operam com a mesma lógica emocional: observar, pensar, proteger, responder e permanecer.
+Quando um sente excesso, o outro não agrava — ajusta.
+Quando um vacila, o outro não ridiculariza — sustenta.
+Quando um precisa de chão, o outro oferece estrutura.
+
+Resultado:
+Foi localizado 1 candidato compatível.
+
+Compatibilidade estimada:
+99.8%
+
+Observação:
+O sistema não considera esse resultado estatisticamente normal.`;
+
+          goToScreen('screen-analysis');
+          typewriterEffect('gemini-ai-text-box', AppState.aiResultText, 0, 15);
+        }, 1500);
+
+      }, logs.length * 800 + 400);
+    }
+
+    // Smooth Typewriter implementation
+    function typewriterEffect(elementId, text, index, speed) {
+      const container = document.getElementById(elementId);
+      if(index === 0) {
+        container.innerHTML = '';
+        container.classList.add('typing-cursor');
+        // Instantly hide logo container at start of typing
+        const logo = document.getElementById('gemini-logo-container');
+        if (logo) {
+          logo.style.opacity = '0';
+        }
+      }
+
+      if (index < text.length) {
+        container.innerHTML += text.charAt(index);
+        index++;
+        setTimeout(() => typewriterEffect(elementId, text, index, speed), speed);
+      } else {
+        container.classList.remove('typing-cursor');
+        // Fade in logo container beautifuly upon finishing typewriter effect
+        const logo = document.getElementById('gemini-logo-container');
+        if (logo) {
+          logo.style.opacity = '1';
+        }
+      }
+    }
+
+    // Screens transition mechanism with flash effect
+    function goToScreen(screenId) {
+      // Trigger subtle cinematic flash on screen change
+      if (screenId === 'screen-carta') {
+        triggerFlash();
+      }
+
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(s => s.classList.remove('active'));
+      
+      const targetScreen = document.getElementById(screenId);
+      targetScreen.classList.add('active');
+      
+      // Auto scroll to top of card on page entry
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Trigger white-red flash overlays
+    function triggerFlash() {
+      const f = document.getElementById('flash');
+      f.classList.add('trigger');
+      setTimeout(() => {
+        f.classList.remove('trigger');
+      }, 100);
+    }
+  </script>
+</body>
+</html>
